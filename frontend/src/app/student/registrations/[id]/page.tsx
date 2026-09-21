@@ -1,0 +1,11 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { StudentRegistration, studentFetch } from "../../../../lib/studentApi";
+import { StudentShell, formatStudentDate } from "../../../../components/student/StudentShell";
+
+export default function StudentRegistrationDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const [registration, setRegistration] = useState<StudentRegistration | null>(null); const [error, setError] = useState("");
+  useEffect(() => { params.then(({ id }) => studentFetch(`/api/registrations/${id}`).then(setRegistration).catch((reason) => setError(reason instanceof Error ? reason.message : "Registration not found"))); }, [params]);
+  return <StudentShell title="Registration details" subtitle="Keep this confirmation handy when you arrive at the venue.">{error ? <div className="student-state">{error}</div> : !registration ? <div className="student-state">Loading registration...</div> : <div className="registration-detail"><div className="success-state"><b>Registration confirmed</b><span>Reference: {registration._id}</span></div><h2 className="display">{registration.eventId.title}</h2><div className="student-info-grid"><span>Date <b>{formatStudentDate(registration.eventId.date)}</b></span><span>Time <b>{registration.eventId.startTime} - {registration.eventId.endTime}</b></span><span>Venue <b>{registration.eventId.venue}</b></span><span>Registration status <b>{registration.registrationStatus}</b></span><span>Check-in status <b>{registration.checkInStatus}</b></span><span>Registered on <b>{formatStudentDate(registration.registeredAt)}</b></span></div>{registration.registrationStatus === "approved" && registration.checkInStatus !== "checked_in" && registration.checkInStatus !== "checked-in" && <button className="btn" onClick={() => { window.location.href = "/student/check-in"; }}>Scan event QR to check in</button>}<button className="btn ghost" onClick={() => { window.location.href = "/student/registrations"; }}>Back to my registrations</button></div>}</StudentShell>;
+}

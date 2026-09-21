@@ -1,0 +1,8 @@
+{
+  "name": "campus-events-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["frontend", "backend"],
+  "scripts": { "dev": "concurrently \"npm run dev --workspace frontend\" \"npm run dev --workspace backend\"", "build": "npm run build --workspace frontend", "start": "npm run start --workspace frontend", "lint": "npm run lint --workspace frontend" },
+  "devDependencies": { "concurrently": "^9.1.0" }
+}
