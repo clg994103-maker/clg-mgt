@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 
 const registrationSchema = new Schema({
   studentId: { type: Schema.Types.ObjectId, ref: "Student" }, eventId: { type: Schema.Types.ObjectId, ref: "Event" },
+  registrationId: { type: String, trim: true, sparse: true },
   registrationCode: { type: String, unique: true, sparse: true, default: () => `REG-${randomBytes(6).toString("hex").toUpperCase()}` },
   registrationStatus: { type: String, default: "pending" }, checkInStatus: { type: String, default: "not_checked_in" },
   registeredAt: { type: Date, default: Date.now }, checkedInAt: Date,

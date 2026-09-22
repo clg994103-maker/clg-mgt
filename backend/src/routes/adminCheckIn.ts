@@ -16,19 +16,17 @@ router.get("/", async (_request, response) => {
 router.post("/", async (request, response) => {
   const registrationCode = typeof request.body.registrationCode === "string" ? request.body.registrationCode.trim() : "";
   const eventId = typeof request.body.eventId === "string" ? request.body.eventId.trim() : "";
-    if (!registrationCode) return response.status(400).json({ message: "Registration not found." });
+  if (!registrationCode) return response.status(400).json({ message: "Registration not found." });
   if (eventId && !mongoose.Types.ObjectId.isValid(eventId)) return response.status(400).json({ message: "A valid event is required" });
 
-    const lookup: Record<string, unknown>[] = [{ registrationCode }, { registrationId: registrationCode }];
-    if (mongoose.Types.ObjectId.isValid(registrationCode)) lookup.push({ _id: registrationCode });
-    const registration = await Registration.findOne({ $or: lookup }).populate("studentId").populate("eventId");
-    if (!registration) return response.status(404).json({ message: "Registration not found." });
-    const student = registration.studentId as unknown as { _id?: mongoose.Types.ObjectId; name?: string; email?: string } | null;
-    const event = registration.eventId as unknown as { _id?: mongoose.Types.ObjectId; title?: string } | null;
-    if (!student) return response.status(404).json({ message: "Student not found." });
-    if (!event) return response.status(404).json({ message: "Event not found." });
-    if (eventId && String(event._id) !== eventId) return response.status(409).json({ message: "This registration is not for the selected event." });
-    if (registration.registrationStatus !== "approved") return response.status(409).json({ message: "This registration is not approved." });
+  const registration = await Registration.findOne({ $or: [{ registrationCode }, { registrationId: registrationCode }] }).populate("studentId").populate("eventId");
+  if (!registration) return response.status(404).json({ message: "Registration not found." });
+  const student = registration.studentId as unknown as { _id?: mongoose.Types.ObjectId; name?: string; email?: string } | null;
+  const event = registration.eventId as unknown as { _id?: mongoose.Types.ObjectId; title?: string } | null;
+  if (!student) return response.status(404).json({ message: "Student not found." });
+  if (!event) return response.status(404).json({ message: "Event not found." });
+  if (eventId && String(event._id) !== eventId) return response.status(409).json({ message: "This registration is not for the selected event." });
+  if (registration.registrationStatus !== "approved") return response.status(409).json({ message: "This registration is not approved." });
   if (["checked_in", "checked-in"].includes(registration.checkInStatus)) {
       return response.status(409).json({ message: "This student is already checked in for this event.", registration });
   }

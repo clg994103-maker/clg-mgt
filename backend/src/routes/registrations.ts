@@ -11,7 +11,8 @@ const router = Router();
 
 router.get("/verify/:registrationId", async (request, response) => {
   const registrationId = String(request.params.registrationId ?? "").trim();
-  const registration = await Registration.findOne({ registrationCode: registrationId }).populate("eventId").populate("studentId", "name email").lean() as unknown as {
+  const registration = await Registration.findOne({ $or: [{ registrationCode: registrationId }, { registrationId }] }).populate("eventId").populate("studentId", "name email").lean() as unknown as {
+    registrationId?: string;
     registrationCode?: string;
     registrationStatus?: string;
     studentId?: { name?: string; email?: string } | null;
@@ -22,7 +23,7 @@ router.get("/verify/:registrationId", async (request, response) => {
   const event = registration.eventId as unknown as { title?: string; date?: Date | string; venue?: string } | null;
   if (!student || !event) return response.status(404).json({ success: false, message: "This QR code is not valid or the registration no longer exists." });
   response.json({ success: true, registration: {
-    registrationId: registration.registrationCode,
+    registrationId: registration.registrationCode ?? registration.registrationId,
     studentName: student.name ?? "Student",
     email: student.email ?? "",
     eventName: event.title ?? "Event",
