@@ -95,6 +95,22 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 	.check-in-layout { max-width: none; }
 }
 
+/* Admin check-in history stays readable without widening the page. */
+.check-in-layout { width: 100%; max-width: 1080px; }
+.check-in-layout form { width: min(100%, 560px); }
+.check-in-layout .field, .check-in-layout .admin-key-input, .check-in-layout select { width: 100%; min-width: 0; }
+.admin-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); background: white; }
+.admin-table { width: 100%; min-width: 860px; border-collapse: collapse; table-layout: fixed; text-align: left; font-size: 13px; }
+.admin-table th, .admin-table td { padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; word-break: break-word; line-height: 1.4; }
+.admin-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+.admin-table th:nth-child(1), .admin-table td:nth-child(1) { width: 16%; }.admin-table th:nth-child(2), .admin-table td:nth-child(2) { width: 19%; }.admin-table th:nth-child(3), .admin-table td:nth-child(3) { width: 18%; }.admin-table th:nth-child(4), .admin-table td:nth-child(4) { width: 15%; }.admin-table th:nth-child(5), .admin-table td:nth-child(5) { width: 15%; }.admin-table th:nth-child(6), .admin-table td:nth-child(6) { width: 10%; }.admin-table th:nth-child(7), .admin-table td:nth-child(7) { width: 7%; }
+.check-in-layout > .btn { width: fit-content; min-width: 180px; }
+@media (max-width: 800px) {
+	.check-in-layout > .btn { width: 100%; }
+	.admin-table { min-width: 780px; }
+	.admin-table th, .admin-table td { padding: 12px; }
+}
+
 @media (max-width: 480px) {
 	.brand-mark { width: 32px; height: 32px; }
 	.nav-auth-button { font-size: 12px; padding-inline: 8px; }

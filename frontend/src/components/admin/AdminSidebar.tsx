@@ -24,7 +24,6 @@ export default function AdminSidebar({ active }: { active: "overview" | "partici
       <nav>{links.map(([label, path]) => <button key={label} className={`side-link ${active === (label === "Check-in" ? "check-in" : label === "Registrations" ? "participants" : label === "Overview" ? "overview" : "events") ? "active" : ""}`} onClick={() => navigate(path)}>{label}</button>)}</nav>
       <div className="side-label">Account</div>
       <button className="side-link" onClick={() => { window.localStorage.removeItem("campus_admin_key"); navigate("/admin"); }}>Sign out</button>
-      <button className="side-link" onClick={() => navigate("/")}>Student view</button>
     </aside>
   </>;
 }
