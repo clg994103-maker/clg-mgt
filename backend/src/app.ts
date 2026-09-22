@@ -20,8 +20,9 @@ const uploadDir = possibleUploadDirs.find((dir) => fs.existsSync(dir)) ?? possib
 fs.mkdirSync(uploadDir, { recursive: true });
 
 const configuredFrontendUrl = process.env.FRONTEND_URL ?? "http://localhost:3000";
+const allowedProductionOrigins = new Set([configuredFrontendUrl, "https://clg-mgt-frontend.vercel.app"]);
 app.use(cors({
-  origin: process.env.NODE_ENV === "production" ? configuredFrontendUrl : (origin, callback) => callback(null, !origin || /^https?:\/\/(localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)[^:]*:3000$/.test(origin)),
+  origin: process.env.NODE_ENV === "production" ? (origin, callback) => callback(null, !origin || allowedProductionOrigins.has(origin)) : (origin, callback) => callback(null, !origin || /^https?:\/\/(localhost|127\.0\.0\.1|10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)[^:]*:3000$/.test(origin)),
   credentials: true,
 }));
 app.use(express.json({ limit: "10mb" }));
