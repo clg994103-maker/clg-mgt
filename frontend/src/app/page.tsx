@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import { getEventImageUrl } from "../lib/eventImage";
 import { apiFetch } from "../lib/api";
+import { loginRedirect } from "../lib/authRedirect";
+import { studentFetch } from "../lib/studentApi";
+import { useStudentSession } from "../lib/useStudentSession";
 
 
 type PublicEvent = {
@@ -48,6 +50,9 @@ export default function Home() {
   const [registered, setRegistered] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [registering, setRegistering] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { student, loading: sessionLoading } = useStudentSession();
 
   useEffect(() => {
     let isActive = true;
@@ -100,6 +105,14 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (sessionLoading) return;
+    if (!student) { setRegistered([]); return; }
+    void studentFetch("/api/registrations").then((registrations: { eventId?: { _id?: string }; registrationStatus?: string }[]) => {
+      setRegistered(registrations.filter((registration) => registration.registrationStatus !== "rejected").map((registration) => registration.eventId?._id).filter((id): id is string => Boolean(id)));
+    }).catch(() => setRegistered([]));
+  }, [sessionLoading, student]);
+
   const visibleEvents = useMemo(() => {
     return events.filter((event) => {
       const matchesCategory = category === "All events" ? true : event.category === category;
@@ -108,18 +121,29 @@ export default function Home() {
     });
   }, [events, category, query]);
 
-  const toggleRegistration = (id: string) => {
-    setRegistered((current) => current.includes(id) ? current.filter((eventId) => eventId !== id) : [...current, id]);
+  async function registerEvent(id: string) {
+    if (sessionLoading || registering || registered.includes(id)) return;
+    if (!student) { window.location.href = loginRedirect(`/student/events/${id}`, "register"); return; }
+    setRegistering(id); setError("");
+    try {
+      await studentFetch("/api/registrations", { method: "POST", body: JSON.stringify({ eventId: id }) });
+      setRegistered((current) => current.includes(id) ? current : [...current, id]);
+      setEvents((current) => current.map((event) => event.id === id ? { ...event, seats: Math.max(event.seats - 1, 0) } : event));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Registration failed");
+    } finally { setRegistering(null); }
   };
 
   return <main className="shell">
     <header className="nav">
       <Brand />
-      <nav className="nav-links">
-        <button className="active" onClick={() => { window.location.href = "/student/events"; }}>Explore</button>
-        <button onClick={() => { window.location.href = "/student/registrations"; }}>My registrations <span>({registered.length})</span></button>
+      <button className="mobile-menu-toggle" type="button" aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}><span /><span /><span /></button>
+      <nav className={`nav-links ${menuOpen ? "open" : ""}`}>
+        <button className="active" onClick={() => { setMenuOpen(false); window.location.href = "/student/events"; }}>Explore</button>
+        {student && <button onClick={() => { setMenuOpen(false); window.location.href = "/student/registrations"; }}>My registrations <span>({registered.length})</span></button>}
+        {!student && !sessionLoading && <button className="mobile-auth-link" onClick={() => { setMenuOpen(false); window.location.href = "/student/login"; }}>Login / Sign up</button>}
       </nav>
-      <div className="profile"><span className="avatar">AR</span><span className="nav-links">Alex R.</span></div>
+      {student ? <button className="profile profile-trigger" type="button" aria-label="Open student profile" onClick={() => { window.location.href = "/student/profile"; }}><span className="avatar">{student.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span><span className="profile-name">{student.name}</span></button> : !sessionLoading ? <button className="nav-auth-button" type="button" onClick={() => { window.location.href = "/student/login"; }}>Login / Sign up</button> : null}
     </header>
 
     <section className="content">
@@ -171,10 +195,10 @@ export default function Home() {
                     <span>{event.venue}</span>
                     <b>{event.seats} seats left</b>
                   </div>
-                  <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+                  <div className="event-card-actions">
                     <button className="btn ghost" onClick={() => setSelected(event)}>View details</button>
-                    <button className={`btn ${registered.includes(event.id) ? "secondary" : ""}`} onClick={() => toggleRegistration(event.id)}>
-                      {registered.includes(event.id) ? "Registered" : "Register"}
+                    <button className={`btn ${registered.includes(event.id) ? "secondary" : ""}`} disabled={registered.includes(event.id) || registering === event.id || sessionLoading} onClick={() => void registerEvent(event.id)}>
+                      {registered.includes(event.id) ? "Registered" : registering === event.id ? "Registering..." : "Register"}
                     </button>
                   </div>
                 </div>
@@ -205,14 +229,9 @@ export default function Home() {
           <span><b>{selected.seats}</b> seats remaining</span>
         </div>
 
-        {registered.includes(selected.id) && <div style={{ display: "flex", alignItems: "center", gap: 14, background: "white", padding: 14, marginTop: 18 }}>
-          <QRCodeSVG value={`campus-events:${selected.id}:alex-r`} size={72} />
-          <span style={{ fontSize: 12, color: "var(--muted)" }}>Your check-in pass<br /><b style={{ color: "var(--ink)" }}>Show this QR at the venue</b></span>
-        </div>}
-
         <div className="modal-actions">
-          <button className="btn" onClick={() => { toggleRegistration(selected.id); setSelected(null); }}>
-            {registered.includes(selected.id) ? "Cancel registration" : "Register for event"}
+          <button className={`btn ${registered.includes(selected.id) ? "secondary" : ""}`} disabled={registered.includes(selected.id) || registering === selected.id || sessionLoading} onClick={() => void registerEvent(selected.id)}>
+            {registered.includes(selected.id) ? "Registered" : registering === selected.id ? "Registering..." : "Register for event"}
           </button>
         </div>
       </div>
