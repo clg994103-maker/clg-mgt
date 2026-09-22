@@ -1,7 +1,7 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
-import cors from "cors";
+import cors, { type CorsOptions } from "cors";
 import express from "express";
 import { connectToDatabase } from "./lib/db.js";
 import eventsRouter from "./routes/events.js";
@@ -26,7 +26,7 @@ const allowedOrigins = new Set([
   "https://clg-mgt-frontend.vercel.app",
   ...configuredFrontendOrigins,
 ]);
-const corsOptions = {
+const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     const isVercelPreview = typeof origin === "string" && /^https:\/\/clg-mgt-frontend-[a-zA-Z0-9-]+-clg994103-9489\.vercel\.app$/.test(origin);
     callback(null, !origin || allowedOrigins.has(origin) || isVercelPreview);
