@@ -24,16 +24,19 @@ const allowedOrigins = new Set([
   "http://localhost:3000",
   "http://localhost:5173",
   "https://clg-mgt-frontend.vercel.app",
-  "https://clg-mgt-frontend-kpq1s0s7v-clg994103-9489.vercel.app",
   ...configuredFrontendOrigins,
 ]);
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
-    const isVercelPreview = typeof origin === "string" && /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin);
+    const isVercelPreview = typeof origin === "string" && /^https:\/\/clg-mgt-frontend-[a-zA-Z0-9-]+-clg994103-9489\.vercel\.app$/.test(origin);
     callback(null, !origin || allowedOrigins.has(origin) || isVercelPreview);
   },
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   credentials: true,
-}));
+};
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use("/uploads", express.static(uploadDir));
