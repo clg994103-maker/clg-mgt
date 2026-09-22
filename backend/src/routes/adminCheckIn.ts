@@ -1,11 +1,17 @@
 import { Router } from "express";
 import mongoose from "mongoose";
 import Registration from "../models/Registration.js";
+import CheckIn from "../models/CheckIn.js";
 import { requireAdmin } from "../middleware/admin.js";
 import { createNotification } from "../lib/notifications.js";
 
 const router = Router();
 router.use(requireAdmin);
+
+router.get("/", async (_request, response) => {
+  const checkIns = await CheckIn.find().sort({ checkedInAt: -1 }).limit(100).lean();
+  response.json(checkIns);
+});
 
 router.post("/", async (request, response) => {
   const registrationCode = typeof request.body.registrationCode === "string" ? request.body.registrationCode.trim() : "";
@@ -35,6 +41,22 @@ router.post("/", async (request, response) => {
     return response.status(409).json({ message: "This registration could not be checked in." });
   }
   const studentId = (registration.studentId as unknown as { _id?: unknown } | null)?._id ?? registration.studentId;
+  let checkIn;
+  try {
+    checkIn = await CheckIn.create({
+      registrationId: registration._id,
+      studentId: studentId,
+      studentName: (student as { name?: string }).name ?? "Student",
+      studentEmail: (student as { email?: string }).email ?? "",
+      eventId: event._id,
+      eventTitle: event.title ?? "Event",
+      checkedInAt,
+      checkedInBy: "admin",
+    });
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) return response.status(409).json({ message: "Student is already checked in." });
+    throw error;
+  }
   await createNotification({
     studentId: String(studentId),
     title: "Check-in successful",
@@ -44,7 +66,7 @@ router.post("/", async (request, response) => {
     registrationId: registration._id,
     dedupeKey: `${registration._id}:check_in_confirmation`,
   });
-  response.json({ message: "CHECK-IN SUCCESSFUL", registration: updated });
+  response.json({ message: "CHECK-IN SUCCESSFUL", registration: updated, checkIn });
 });
 
 export default router;
