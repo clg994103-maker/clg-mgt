@@ -31,7 +31,7 @@ const corsOptions: CorsOptions = {
     const isVercelPreview = typeof origin === "string" && /^https:\/\/clg-mgt-frontend-[a-zA-Z0-9-]+-clg994103-9489\.vercel\.app$/.test(origin);
     callback(null, !origin || allowedOrigins.has(origin) || isVercelPreview);
   },
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-admin-key"],
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   credentials: true,
 };
