@@ -16,8 +16,15 @@ export function firebaseErrorMessage(reason: unknown) {
   const code = typeof reason === "object" && reason !== null && "code" in reason ? String(reason.code) : "";
   const messages: Record<string, string> = {
     "auth/email-already-in-use": "An account with this email already exists.",
+    "auth/invalid-email": "Enter a valid email address.",
     "auth/invalid-credential": "Invalid email or password.",
+    "auth/invalid-login-credentials": "Invalid email or password.",
+    "auth/user-not-found": "No account was found with this email.",
+    "auth/wrong-password": "Invalid email or password.",
+    "auth/user-disabled": "This account has been disabled. Contact an administrator.",
+    "auth/too-many-requests": "Too many sign-in attempts. Please wait and try again later.",
     "auth/weak-password": "Password is too weak.",
+    "auth/missing-email": "Enter your email address.",
     "auth/popup-closed-by-user": "Google sign-in was cancelled.",
     "auth/popup-blocked": "Please allow popups for Google sign-in.",
     "auth/network-request-failed": "Network error. Please check your connection.",
@@ -41,13 +48,15 @@ export async function syncFirebaseUser(user: User, name?: string) {
 }
 
 export async function firebaseSignup(name: string, email: string, password: string) {
-  const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
+  const normalizedEmail = email.trim();
+  const result = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
   await updateProfile(result.user, { displayName: name.trim() });
   return syncFirebaseUser(result.user, name.trim());
 }
 
 export async function firebaseLogin(email: string, password: string) {
-  const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+  const normalizedEmail = email.trim();
+  const result = await signInWithEmailAndPassword(auth, normalizedEmail, password);
   return syncFirebaseUser(result.user);
 }
 
