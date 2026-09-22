@@ -30,16 +30,6 @@ router.post("/", async (request, response) => {
   }
 
   const checkedInAt = new Date();
-  const updated = await Registration.findOneAndUpdate(
-    { _id: registration._id, registrationStatus: "approved", checkInStatus: { $nin: ["checked_in", "checked-in"] } },
-    { checkInStatus: "checked_in", checkedInAt },
-    { new: true },
-  ).populate("studentId").populate("eventId");
-  if (!updated) {
-    const current = await Registration.findById(registration._id).populate("studentId").populate("eventId");
-    if (current && ["checked_in", "checked-in"].includes(current.checkInStatus)) return response.status(409).json({ message: "Already checked in", registration: current });
-    return response.status(409).json({ message: "This registration could not be checked in." });
-  }
   const studentId = (registration.studentId as unknown as { _id?: unknown } | null)?._id ?? registration.studentId;
   let checkIn;
   try {
@@ -56,6 +46,17 @@ router.post("/", async (request, response) => {
   } catch (error: unknown) {
     if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) return response.status(409).json({ message: "Student is already checked in." });
     throw error;
+  }
+  const updated = await Registration.findOneAndUpdate(
+    { _id: registration._id, registrationStatus: "approved", checkInStatus: { $nin: ["checked_in", "checked-in"] } },
+    { checkInStatus: "checked_in", checkedInAt },
+    { new: true },
+  ).populate("studentId").populate("eventId");
+  if (!updated) {
+    await CheckIn.deleteOne({ _id: checkIn._id });
+    const current = await Registration.findById(registration._id).populate("studentId").populate("eventId");
+    if (current && ["checked_in", "checked-in"].includes(current.checkInStatus)) return response.status(409).json({ message: "Already checked in", registration: current });
+    return response.status(409).json({ message: "This registration could not be checked in." });
   }
   await createNotification({
     studentId: String(studentId),

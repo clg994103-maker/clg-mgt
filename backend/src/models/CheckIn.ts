@@ -10,6 +10,6 @@ const checkInSchema = new Schema({
   checkedInAt: { type: Date, required: true, default: Date.now },
   checkedInBy: { type: String, required: true, default: "admin" },
   status: { type: String, enum: ["checked-in"], default: "checked-in" },
-}, { timestamps: true, collection: "check-ins" });
+}, { timestamps: true, collection: "checkin" });
 
 export default mongoose.models.CheckIn || mongoose.model("CheckIn", checkInSchema);
