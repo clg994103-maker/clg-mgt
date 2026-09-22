@@ -2,8 +2,25 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import type { NextFunction, Request, Response } from "express";
 import Student from "../models/Student.js";
+import { verifyFirebaseIdToken } from "../lib/firebaseAdmin.js";
 
 export async function requireStudent(request: Request, response: Response, next: NextFunction) {
+  const authorization = request.headers.authorization ?? "";
+  if (authorization) {
+    if (!authorization.startsWith("Bearer ")) return response.status(401).json({ message: "Authentication required" });
+    const idToken = authorization.slice(7).trim();
+    if (!idToken) return response.status(401).json({ message: "Authentication required" });
+    try {
+      const decoded = await verifyFirebaseIdToken(idToken);
+      const student = await Student.findOne({ firebaseUid: decoded.uid, role: "student" }).select("_id");
+      if (!student) return response.status(401).json({ message: "Student record not found" });
+      request.studentId = String(student._id);
+      return next();
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") console.error("Firebase student authentication failed:", error instanceof Error ? error.message : "Unknown error");
+      return response.status(401).json({ message: "Firebase authentication failed" });
+    }
+  }
   const token = request.cookies?.campus_student_session;
   const secret = process.env.STUDENT_JWT_SECRET;
   if (!token || !secret) return response.status(401).json({ message: "Student login required" });
