@@ -94,9 +94,14 @@ export default function AdminCheckInPage() {
         headers: { "Content-Type": "application/json", "x-admin-key": apiKey },
         body: JSON.stringify({ registrationCode: code, ...(eventId ? { eventId } : {}) }),
       });
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: { message?: string; registration?: Registration } = {};
+      try { data = JSON.parse(responseText) as typeof data; } catch { /* A framework 404 may return HTML. */ }
       if (data.registration) setRegistration(data.registration);
-      if (!response.ok) throw new Error(data.message ?? "Invalid registration ID");
+      if (!response.ok) {
+        if (response.status === 404 && !data.message) throw new Error("Check-in service is unavailable.");
+        throw new Error(data.message ?? "Could not check in student");
+      }
       setMessage(data.message ?? "Check-in completed successfully.");
       setRegistrationCode("");
       await loadHistory(apiKey);
