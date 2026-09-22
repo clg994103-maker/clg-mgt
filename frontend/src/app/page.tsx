@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { getEventImageUrl } from "../lib/eventImage";
-import { API_URL } from "../lib/api";
+import { apiFetch } from "../lib/api";
 
 
 type PublicEvent = {
@@ -57,7 +57,7 @@ export default function Home() {
       setError("");
 
       try {
-        const response = await fetch(`${API_URL}/api/events`);
+        const response = await apiFetch("/api/events");
         const data = await response.json();
 
         if (!response.ok) {

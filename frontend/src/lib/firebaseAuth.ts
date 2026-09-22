@@ -9,11 +9,12 @@ import {
   type User,
 } from "firebase/auth";
 import { auth } from "../firebase/config";
-import { API_URL } from "./api";
+import { apiFetch } from "./api";
 import { StudentApiError, writeStoredStudentProfile, type StudentUser } from "./studentApi";
 
 export function firebaseErrorMessage(reason: unknown) {
   const code = typeof reason === "object" && reason !== null && "code" in reason ? String(reason.code) : "";
+  if (process.env.NODE_ENV === "development" && code) console.error("Firebase authentication error:", code);
   const messages: Record<string, string> = {
     "auth/email-already-in-use": "An account with this email already exists.",
     "auth/invalid-email": "Enter a valid email address.",
@@ -34,7 +35,7 @@ export function firebaseErrorMessage(reason: unknown) {
 
 export async function syncFirebaseUser(user: User, name?: string) {
   const idToken = await user.getIdToken();
-  const response = await fetch(`${API_URL}/api/auth/firebase-sync`, {
+  const response = await apiFetch("/api/auth/firebase-sync", {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
@@ -76,6 +77,6 @@ export async function firebaseProfileUpdate(name: string) {
 
 export async function firebaseLogout() {
   await signOut(auth);
-  await fetch(`${API_URL}/api/auth/logout`, { method: "POST", credentials: "include" }).catch(() => undefined);
+  await apiFetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => undefined);
   writeStoredStudentProfile(null);
 }

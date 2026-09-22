@@ -28,7 +28,10 @@ const allowedOrigins = new Set([
   ...configuredFrontendOrigins,
 ]);
 app.use(cors({
-  origin: (origin, callback) => callback(null, !origin || allowedOrigins.has(origin)),
+  origin: (origin, callback) => {
+    const isVercelPreview = typeof origin === "string" && /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin);
+    callback(null, !origin || allowedOrigins.has(origin) || isVercelPreview);
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: "10mb" }));

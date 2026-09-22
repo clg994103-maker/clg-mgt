@@ -1,4 +1,4 @@
-import { API_URL } from "./api";
+import { apiFetch } from "./api";
 
 export { API_URL } from "./api";
 
@@ -58,7 +58,7 @@ export function writeStoredStudentProfile(student: StudentUser | null) {
 }
 
 export async function getCurrentStudent() {
-  const response = await fetch(`${API_URL}/api/auth/me`, { credentials: "include" });
+  const response = await apiFetch("/api/auth/me", { credentials: "include" });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new StudentApiError(data.message ?? "Student login required", response.status);
   const user = data.user as StudentUser;
@@ -67,7 +67,7 @@ export async function getCurrentStudent() {
 }
 
 export async function studentAuth(path: "/api/auth/login" | "/api/auth/signup", body: Record<string, string>) {
-  const response = await fetch(`${API_URL}${path}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const response = await apiFetch(path, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new StudentApiError(data.message ?? "Unable to connect to the server. Please try again.", response.status);
   const user = data.user as StudentUser;
@@ -76,7 +76,7 @@ export async function studentAuth(path: "/api/auth/login" | "/api/auth/signup", 
 }
 
 export async function studentProfileUpdate(name: string) {
-  const response = await fetch(`${API_URL}/api/auth/profile`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+  const response = await apiFetch("/api/auth/profile", { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new StudentApiError(data.message ?? "Unable to update profile.", response.status);
   const user = data.user as StudentUser;
@@ -85,21 +85,21 @@ export async function studentProfileUpdate(name: string) {
   return user;
 }
 
-export async function studentLogout() { await fetch(`${API_URL}/api/auth/logout`, { method: "POST", credentials: "include" }); writeStoredStudentProfile(null); }
+export async function studentLogout() { await apiFetch("/api/auth/logout", { method: "POST", credentials: "include" }); writeStoredStudentProfile(null); }
 
 export async function passwordResetRequest(email: string) { return authRequest("/api/auth/password-reset/request", { email }); }
 export async function passwordResetVerify(email: string, otp: string) { return authRequest("/api/auth/password-reset/verify", { email, otp }); }
 export async function passwordReset(resetToken: string, password: string) { return authRequest("/api/auth/password-reset/reset", { resetToken, password }); }
 
 async function authRequest(path: string, body: Record<string, string>) {
-  const response = await fetch(`${API_URL}${path}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const response = await apiFetch(path, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new StudentApiError(data.message ?? "Unable to connect to the server. Please try again.", response.status);
   return data as { email?: string; developmentOtp?: string; resetToken?: string; message?: string };
 }
 
 export async function studentFetch(path: string, options: RequestInit = {}) {
-  const response = await fetch(`${API_URL}${path}`, { ...options, credentials: "include", headers: { ...options.headers, "Content-Type": "application/json" } });
+  const response = await apiFetch(path, { ...options, credentials: "include", headers: { ...options.headers, "Content-Type": "application/json" } });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 401 && typeof window !== "undefined" && window.location.pathname.startsWith("/student/events/")) window.location.href = `/student/login?returnTo=${encodeURIComponent(window.location.pathname)}`;

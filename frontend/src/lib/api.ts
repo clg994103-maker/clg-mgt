@@ -4,3 +4,12 @@ const defaultApiUrl = process.env.NODE_ENV === "production"
 	: "http://localhost:5000";
 
 export const API_URL = configuredApiUrl || defaultApiUrl;
+
+export async function apiFetch(path: string, options: RequestInit = {}) {
+	try {
+		return await fetch(`${API_URL}${path}`, options);
+	} catch (reason) {
+		if (process.env.NODE_ENV === "development") console.error("API request failed:", reason);
+		throw new Error("Unable to connect to the Campus Events server. Please try again.");
+	}
+}
