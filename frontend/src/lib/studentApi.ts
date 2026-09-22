@@ -1,4 +1,5 @@
 import { apiFetch } from "./api";
+import { auth } from "../firebase/config";
 
 export { API_URL } from "./api";
 
@@ -102,7 +103,7 @@ export async function studentFetch(path: string, options: RequestInit = {}) {
   const response = await apiFetch(path, { ...options, credentials: "include", headers: { ...options.headers, "Content-Type": "application/json" } });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (response.status === 401 && typeof window !== "undefined" && window.location.pathname.startsWith("/student/events/")) window.location.href = `/student/login?returnTo=${encodeURIComponent(window.location.pathname)}`;
+    if (response.status === 401 && !auth.currentUser && typeof window !== "undefined" && window.location.pathname.startsWith("/student/events/")) window.location.href = `/student/login?returnTo=${encodeURIComponent(window.location.pathname)}`;
     throw new StudentApiError(data.message ?? "Something went wrong", response.status);
   }
   return data;

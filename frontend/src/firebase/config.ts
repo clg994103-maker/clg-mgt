@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCR4t2w0prV0BBW5VX0OLuRP_IBRm8VF2Y",
@@ -14,4 +14,10 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+export const authReady = new Promise<void>((resolve) => {
+  const unsubscribe = onAuthStateChanged(auth, () => {
+    unsubscribe();
+    resolve();
+  });
+});
 export default app;
