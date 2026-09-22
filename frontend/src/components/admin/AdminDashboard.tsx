@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { API_URL } from "../../lib/api";
 
 type DashboardData = {
@@ -15,11 +15,23 @@ function date(value: string) { return new Date(value).toLocaleDateString(undefin
 export default function AdminDashboard({ apiKey, onCreate, onViewEvents, onViewParticipants }: { apiKey: string; onCreate: () => void; onViewEvents: () => void; onViewParticipants: () => void }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLElement | null>(null);
   useEffect(() => { fetch(`${API_URL}/api/admin/dashboard`, { headers: { "x-admin-key": apiKey } }).then(async (response) => { const body = await response.json(); if (!response.ok) throw new Error(body.message ?? "Could not load dashboard"); return body; }).then(setData).catch((reason) => setError(reason instanceof Error ? reason.message : "Could not load dashboard")); }, [apiKey]);
-  if (error) return <div className="admin-error">{error}</div>;
-  if (!data) return <div className="admin-empty">Loading dashboard...</div>;
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handlePointerDown = (event: MouseEvent) => { if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) setMobileMenuOpen(false); };
+    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileMenuOpen(false); };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => { document.removeEventListener("mousedown", handlePointerDown); document.removeEventListener("keydown", handleKeyDown); };
+  }, [mobileMenuOpen]);
+  const navigate = (path: string) => { setMobileMenuOpen(false); window.location.href = path; };
+  const mobileNav = <section ref={mobileMenuRef} className="admin-dashboard-mobile-nav"><div className="brand"><span className="brand-mark">CE</span><span>Campus Events</span></div><button className="admin-dashboard-mobile-toggle" type="button" aria-label={mobileMenuOpen ? "Close admin navigation" : "Open admin navigation"} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((current) => !current)}><span /><span /><span /></button>{mobileMenuOpen && <nav><button onClick={() => setMobileMenuOpen(false)}>Overview</button><button onClick={() => { setMobileMenuOpen(false); onViewEvents(); }}>Events</button><button onClick={() => { setMobileMenuOpen(false); onViewParticipants(); }}>Registrations</button><button onClick={() => navigate("/admin/check-in")}>Check-in</button><button onClick={() => { window.localStorage.removeItem("campus_admin_key"); navigate("/admin"); }}>Sign out</button></nav>}</section>;
+  if (error) return <div className="dashboard-content">{mobileNav}<div className="admin-error">{error}</div></div>;
+  if (!data) return <div className="dashboard-content">{mobileNav}<div className="admin-empty">Loading dashboard...</div></div>;
   const cards = [["Total students", data.stats.totalStudents], ["Total events", data.stats.totalEvents], ["Upcoming events", data.stats.upcomingEvents], ["Total registrations", data.stats.totalRegistrations], ["Approved registrations", data.stats.approvedRegistrations], ["Pending registrations", data.stats.pendingRegistrations], ["Checked-in participants", data.stats.checkedInParticipants]];
-  return <div className="dashboard-content">
+  return <div className="dashboard-content">{mobileNav}
     <div className="dashboard-actions"><button className="btn secondary" onClick={onCreate}>+ Create event</button><button className="btn ghost" onClick={onViewEvents}>View events</button><button className="btn ghost" onClick={onViewParticipants}>View participants</button><button className="btn ghost" onClick={() => { window.location.href = "/admin/check-in"; }}>Scan QR</button></div>
     <div className="dashboard-stat-grid">{cards.map(([label, value]) => <div className="dashboard-stat" key={label as string}><span>{label}</span><strong>{value}</strong></div>)}</div>
     <div className="dashboard-grid">
