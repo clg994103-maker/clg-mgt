@@ -97,7 +97,7 @@ export default function AdminCheckInPage() {
       const data = await response.json();
       if (data.registration) setRegistration(data.registration);
       if (!response.ok) throw new Error(data.message ?? "Invalid registration ID");
-      setMessage(data.message ?? "Student checked in successfully.");
+      setMessage(data.message ?? "Check-in completed successfully.");
       setRegistrationCode("");
       await loadHistory(apiKey);
     } catch (reason) {
